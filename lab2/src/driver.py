@@ -167,17 +167,18 @@ class Driver:
 				points["distances"].append(range)
 		
 		# Find the distance reading that matches the target theta in points, find the closest point in the direction of the target
-		closest_theta = np.argmin([abs(theta - target_theta) for theta in points["thetas"]])
+		theta_differences = [abs(theta - target_theta) for theta in points["thetas"]]
+		closest_theta = np.argmin(theta_differences)
 		matching_distance = points["distances"][closest_theta]
 
 
 		if matching_distance < target_distance:
 			# There is something in the way between the robot and the target, search through the points to find an clear path
-			sorted_points = np.argsort([abs(theta - target_theta) for theta in points["thetas"]])
+			sorted_points = np.argsort(theta_differences)
 			
 			clear_theta = None
 			for i in sorted_points:
-				if points["distances"][i] > target_distance:
+				if points["distances"][i] > 2.0:
 					clear_theta = points["thetas"][i]
 					break
 			
@@ -193,7 +194,7 @@ class Driver:
 		
 		# If no obstacle between robot and target, continue forward
 		else:
-			command.angular.z = target_theta * 2
+			command.angular.z = target_theta
 			command.linear.x = tanh(target_distance)
 			print(f"No obstacle, moving toward target")
 		
