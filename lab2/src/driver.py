@@ -160,11 +160,9 @@ class Driver:
 				continue # Skip invalid values
 
 			theta = lidar.angle_min + ( lidar.angle_increment * i )
-			y = range * np.sin(theta)
 
-			if abs(y) < shoulder_width / 2:
-				points["thetas"].append(theta)
-				points["distances"].append(range)
+			points["thetas"].append(theta)
+			points["distances"].append(range)
 		
 		# Find the distance reading that matches the target theta in points, find the closest point in the direction of the target
 		theta_differences = [abs(theta - target_theta) for theta in points["thetas"]]
@@ -174,16 +172,15 @@ class Driver:
 		else:
 		    matching_distance = float('inf')  # No obstacle in the target direction
 
-
-
 		if matching_distance < target_distance:
 			# There is something in the way between the robot and the target, search through the points to find an clear path
 			sorted_points = np.argsort(theta_differences)
 			
 			clear_theta = None
-			for i in sorted_points:
-				if points["distances"][i] > 2.0:
-					clear_theta = points["thetas"][i]
+			for i, theta in enumerate(points["thetas"]):
+				y = points["distances"][i] * np.sin(theta)
+				if abs(y) > shoulder_width /2 and points["distances"][i] > 2.0:
+					clear_theta = theta
 					break
 			
 			# If there is a clear path, turn to face the clear path and move the distance of the object
