@@ -163,27 +163,27 @@ class Driver:
 			points["thetas"].append(theta)
 			points["distances"].append(range)
 		
-		# Find the distance reading that matches the target theta in points, find the closest point in the direction of the target
-		# Define angular range based on shoulder width at the target distance
-    		safe_angle_offset = atan2(shoulder_width / 2, target_distance)
-    		lower_bound = target_theta - safe_angle_offset
-    		upper_bound = target_theta + safe_angle_offset
+			# Find the distance reading that matches the target theta in points, find the closest point in the direction 	of the target
+			# Define angular range based on shoulder width at the target distance
+			safe_angle_offset = atan2(shoulder_width / 2, target_distance)
+			lower_bound = target_theta - safe_angle_offset
+			upper_bound = target_theta + safe_angle_offset
 
     		# Check if any obstacle is within the safe angular range and distance
-    		obstacle_detected = False
-    		for theta, distance in zip(points["thetas"], points["distances"]):
-    		    if lower_bound <= theta <= upper_bound and distance < target_distance:
-    		        obstacle_detected = True
-    		        break
+			# obstacle_detected = False
+			for theta, distance in zip(points["thetas"], points["distances"]):
+				if lower_bound <= theta <= upper_bound and distance < target_distance:
+					obstacle_detected = True
+					break
 				
-    		if obstacle_detected:
+			if obstacle_detected:
     		    # Search for a clear path around the target
-    		    sorted_indices = np.argsort([abs(theta - target_theta) for theta in points["thetas"]])
-    		    clear_theta = None
-    		    for i in sorted_indices:
-    		        if points["distances"][i] > target_distance:
-    		            clear_theta = points["thetas"][i]
-    		            break
+				sorted_indices = np.argsort([abs(theta - target_theta) for theta in points["thetas"]])
+				clear_theta = None
+				for i in sorted_indices:
+					if points["distances"][i] > target_distance:
+						clear_theta = points["thetas"][i]
+						break
 			
 			# If there is a clear path, turn to face the clear path and move the distance of the object
 			if clear_theta is not None:
