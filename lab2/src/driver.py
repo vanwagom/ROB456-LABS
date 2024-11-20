@@ -198,6 +198,8 @@ class Driver:
 			print(f"No obstacle, moving forward")
 		
 		return command
+		# NEW STUFF
+	
 
 if __name__ == '__main__':
 	rospy.init_node('driver', argv=sys.argv)
