@@ -190,6 +190,7 @@ class Driver:
 		
 		# If no obstacle between robot and target, continue forward
 		else:
+			command.angular.z = target_theta
 			command.linear.x = 0.1
 			print(f"No obstacle, moving forward")
 		
