@@ -145,7 +145,7 @@ class Driver:
 		target_x = target[0]
 		target_y = target[1]
 		target_distance = sqrt(target_x ** 2 + target_y ** 2)
-		target_theta = (atan2(target_y, target_x) - lidar.angle_min) % (2 * np.pi)
+		target_theta = atan2(target_y, target_x)
 		shoulder_width = 0.38
 
 		# Init the angles and distances for storing points infront of the robot
@@ -168,8 +168,12 @@ class Driver:
 		
 		# Find the distance reading that matches the target theta in points, find the closest point in the direction of the target
 		theta_differences = [abs(theta - target_theta) for theta in points["thetas"]]
-		closest_theta = np.argmin(theta_differences)
-		matching_distance = points["distances"][closest_theta]
+		if theta_differences:
+			closest_theta_idx = np.argmin(theta_differences)
+			matching_distance = points["distances"][closest_theta_idx]
+		else:
+		    matching_distance = float('inf')  # No obstacle in the target direction
+
 
 
 		if matching_distance < target_distance:
