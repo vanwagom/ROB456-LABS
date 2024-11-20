@@ -139,10 +139,6 @@ class Driver:
 		#  Step 1) Calculate the angle the robot has to turn to in order to point at the target
 		#  Step 2) Set your speed based on how far away you are from the target, as before
 		#  Step 3) Add code that veers left (or right) to avoid an obstacle in front of it
-		# This sets the move forward speed (as before)
-		command.linear.x = 0.1
-		# This sets the angular turn speed (in radians per second)
-		command.angular.z = 0.1
 
   # YOUR CODE HERE
 
@@ -198,7 +194,6 @@ class Driver:
 			print(f"No obstacle, moving forward")
 		
 		return command
-		# NEW STUFF
 	
 
 if __name__ == '__main__':
