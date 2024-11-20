@@ -145,7 +145,7 @@ class Driver:
 		target_x = target[0]
 		target_y = target[1]
 		target_distance = sqrt(target_x ** 2 + target_y ** 2)
-		target_theta = atan2(target_y, target_x)
+		target_theta = (atan2(target_y, target_x) - lidar.angle_min) % (2 * np.pi)
 		shoulder_width = 0.38
 
 		# Init the angles and distances for storing points infront of the robot
@@ -160,7 +160,7 @@ class Driver:
 				continue # Skip invalid values
 
 			theta = lidar.angle_min + ( lidar.angle_increment * i )
-			y = range * np.cos(theta)
+			y = range * np.sin(theta)
 
 			if abs(y) < shoulder_width / 2:
 				points["thetas"].append(theta)
@@ -193,7 +193,7 @@ class Driver:
 		
 		# If no obstacle between robot and target, continue forward
 		else:
-			command.angular.z = target_theta
+			command.angular.z = target_theta * 2
 			command.linear.x = tanh(target_distance)
 			print(f"No obstacle, moving toward target")
 		
