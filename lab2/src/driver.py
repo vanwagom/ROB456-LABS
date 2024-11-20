@@ -160,36 +160,32 @@ class Driver:
 				continue # Skip invalid values
 
 			theta = lidar.angle_min + ( lidar.angle_increment * i )
-			points["thetas"].append(theta)
-			points["distances"].append(range)
-		
-			# Find the distance reading that matches the target theta in points, find the closest point in the direction 	of the target
-			# Define angular range based on shoulder width at the target distance
-			safe_angle_offset = atan2(shoulder_width / 2, target_distance)
-			lower_bound = target_theta - safe_angle_offset
-			upper_bound = target_theta + safe_angle_offset
+			y = range * np.cos(theta)
 
-    		# Check if any obstacle is within the safe angular range and distance
-			# obstacle_detected = False
-			for theta, distance in zip(points["thetas"], points["distances"]):
-				if lower_bound <= theta <= upper_bound and distance < target_distance:
-					obstacle_detected = True
+			if abs(y) < shoulder_width / 2:
+				points["thetas"].append(theta)
+				points["distances"].append(range)
+		
+		# Find the distance reading that matches the target theta in points, find the closest point in the direction of the target
+		closest_theta = np.argmin([abs(theta - target_theta) for theta in points["thetas"]])
+		matching_distance = points["distances"][closest_theta]
+
+
+		if matching_distance < target_distance:
+			# There is something in the way between the robot and the target, search through the points to find an clear path
+			sorted_points = np.argsort([abs(theta - target_theta) for theta in points["thetas"]])
+			
+			clear_theta = None
+			for i in sorted_points:
+				if points["distances"][i] > target_distance:
+					clear_theta = points["thetas"][i]
 					break
-				
-			if obstacle_detected:
-    		    # Search for a clear path around the target
-				sorted_indices = np.argsort([abs(theta - target_theta) for theta in points["thetas"]])
-				clear_theta = None
-				for i in sorted_indices:
-					if points["distances"][i] > target_distance:
-						clear_theta = points["thetas"][i]
-						break
 			
 			# If there is a clear path, turn to face the clear path and move the distance of the object
 			if clear_theta is not None:
 				command.angular.z = clear_theta
-				command.linear.x = tanh(target_distance)
-				print(f"Turning to face {clear_theta:.2f} and moving {target_distance:.2f}")
+				command.linear.x = tanh(matching_distance)
+				print(f"Turning to face {clear_theta:.2f} and moving {matching_distance:.2f}")
 			else:
 				# There is no clear path, stop the robot
 				command.linear.x = 0.0
