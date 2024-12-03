@@ -129,7 +129,7 @@ def find_all_possible_goals(im):
     """
 
     # List of 8 neighbor offsets
-    neighbors = [(x, y) for x in [-2, 0, 2] for y in [-2, 0, 2] if (x, y) != (0, 0)]
+    neighbors = [(x, y) for x in [-1, 0, 1] for y in [-1, 0, 1] if (x, y) != (0, 0)]
 
     # Create mask for unknown pixels
     unknown_value = 128 
@@ -157,8 +157,6 @@ def find_all_possible_goals(im):
     return possible_goals
 
 
-from scipy.ndimage import label
-
 def find_best_point(im, possible_points, robot_loc, min_area=100):
     """
     Pick the best unseen point to go to, considering proximity and connectivity.
@@ -183,51 +181,7 @@ def find_best_point(im, possible_points, robot_loc, min_area=100):
         if dist < best_point[0]:
             best_point = [dist, point]
     
-    return best_point[1]
-
-
-
-
-
-
-    """ a = min_area // 2
-
-    neighbors = [(x, y) for x in range(-a, a, 1) for y in range(-a, a, 1) if (x, y) != (0, 0)]
-
-    # Create a binary mask for possible points
-    possible_mask = np.zeros_like(im, dtype=bool)
-    valid_regions_mask = np.zeros_like(im, dtype=bool)
-
-    for point in possible_points:
-        possible_mask[point[0], point[1]] = True
-
-    # Accumulate free pixel neighbors
-    for di, dj in neighbors:
-        rolled = np.roll(np.roll(possible_mask, di, axis=0), dj, axis=1)
-        if di < 0:
-            rolled[di:, :] = False
-        elif di > 0:
-            rolled[:di, :] = False
-        if dj < 0:
-            rolled[:, dj:] = False
-        elif dj > 0:
-            rolled[:, :dj] = False
-        valid_regions_mask |= rolled
-
-    # Compute distances for all valid points
-    valid_points = np.argwhere(valid_regions_mask)
-    distances = np.sqrt((valid_points[:, 0] - robot_loc[0])**2 + (valid_points[:, 1] - robot_loc[1])**2)
-
-    # Find the point with the minimum distance
-    if len(distances) > 0:
-        best_idx = np.argmin(distances)
-        best_point = tuple(valid_points[best_idx])
-        return best_point
-    else:
-        # No valid points found
-        return None """
-
-            
+    return best_point[1]          
 
 
 def find_waypoints(im, path, res=0.95):
