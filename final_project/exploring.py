@@ -157,22 +157,49 @@ def find_all_possible_goals(im):
     return possible_goals
 
 
-def find_best_point(im, possible_points, robot_loc, min_area=100):
+from scipy.ndimage import convolve
+
+
+def find_best_point(im, possible_points, robot_loc, min_area=0.5):
     """
     Pick the best unseen point to go to, considering proximity and connectivity.
     
     @param im: Thresholded image (numpy array).
     @param possible_points: List of possible points to choose from.
     @param robot_loc: Location of the robot as a tuple (x, y).
-    @param min_area: Minimum size of the connected region a point must belong to.
+    @param min_area: Minimum precentage around a point that must also be possible.
     @return: The best point as a tuple (x, y).
     """
 
-     # Init best point stored as a tuple (distance, point)
+    
+    # Create a mask for the unknown pixels
+    unknown_mask = ( im == 128 )
+
+    # Create the kernal that will be used to find the number of adjacent pixels that are unknown
+    kernal = np.ones((5,5), dtype=int)
+
+    # Calculate the minimum number of adjacent pixels that must be unknown for the pixel to pass the filter
+    min_pixels = int( ( np.size(kernal) - 1 ) * min_area )
+
+    # Convolve the unknown mask with the kernal to find the number of adjacent pixels that are unknown. Creates an array where the values represent the number of neighbors that are unknown
+    connectivity = convolve(unknown_mask.astype(int), kernal, mode='constant', cval=0)
+
+    # Create a list of valid points that are unknown and have enough neighbors that are also unknown
+    valid_points = []
+    for point in possible_points:
+        x, y = point
+        if im[y, x] == 128 and connectivity[y, x] >= min_pixels:
+            valid_points.append(point)
+    
+    if not valid_points:
+        return None
+
+
+    # Init best point stored as a tuple (distance, point)
     best_point = [np.inf, (0, 0)]
     
     # Iterate over the possible points and search for the closest unknown point to the robot
-    for point in possible_points:
+    for point in valid_points:
 
         # Calculate the distance from the robot to the point
         dist = np.sqrt((point[0] - robot_loc[0])**2 + (point[1] - robot_loc[1])**2)
@@ -180,6 +207,9 @@ def find_best_point(im, possible_points, robot_loc, min_area=100):
         # If the distance is less than the current best point, update the best point
         if dist < best_point[0]:
             best_point = [dist, point]
+
+    if best_point[1] == (0, 0):
+        return None
     
     return best_point[1]          
 
