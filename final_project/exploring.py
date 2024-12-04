@@ -224,27 +224,29 @@ def find_waypoints(im, path, res=0.95):
     # Split the path equally into points
     split_path = []
     for i, point in enumerate(path):
-        if i % 5 == 0:
+        if i % 4 == 0:
             split_path.append(point)    
 
     corners = []
-    for i in range(1, len(split_path)-2):
+    for i in range(0, len(split_path)-1):
         
         # Get the vectors around the central point
         prev_point = split_path[i-1]
         current_point = split_path[i]
         next_point = split_path[i+1]
         
-        # Calculate the curvature at the point
+        # Calculate the angle between vectors at the point
         prev_vector = (current_point[0] - prev_point[0], current_point[1] - prev_point[1])
         next_vector = (next_point[0] - current_point[0], next_point[1] - current_point[1])
         curvature = np.dot(prev_vector, next_vector) / (np.linalg.norm(prev_vector) * np.linalg.norm(next_vector))
         
-        print(f"Curvature at {i} is {curvature}")
-        
         # If the curvature is not 1, then we have a corner
         if curvature < res:
             corners.append(split_path[i])
+
+  
+    # Add the goal location back into the list
+    corners.append(path[-1])
             
     return corners
         
