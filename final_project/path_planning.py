@@ -220,15 +220,11 @@ def dijkstra(im, robot_loc, goal_loc):
                 continue
 
             new_distance = visited_distance + edge_cost
-            
-            best_node = []
-            best_node.append((adj_node , abs(goal_loc[0] - adj_node[0]) + abs(goal_loc[1] - adj_node[1]), new_distance))
 
-        best_node, distance_to_goal, new_distance = np.argmin(best_node, axis=1,keepdims=True)
-        # Check if the adj node has been visited and if it's closer than the current node
-        if best_node not in visited or new_distance < visited[adj_node][0]:
-            visited[best_node] = (new_distance, node_ij, False)
-            heapq.heappush(priority_queue, (new_distance, best_node))       
+            # Check if the adj node has been visited and if it's closer than the current node
+            if adj_node not in visited or new_distance < visited[adj_node][0]:
+                visited[adj_node] = (new_distance, node_ij, False)
+                heapq.heappush(priority_queue, (new_distance, adj_node))       
         
     
     # TODO: Deal with not being able to get to the goal loc
