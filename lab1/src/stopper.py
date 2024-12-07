@@ -19,8 +19,6 @@ from geometry_msgs.msg import Twist
 from sensor_msgs.msg import LaserScan
 
 
-
-
 # A callback to deal with the LaserScan messages.
 
 def callback(scan):
@@ -64,48 +62,46 @@ def callback(scan):
 
 
 if __name__ == '__main__':
-	# Initialize the node, and call it "driver".
-	rospy.init_node('stopper', argv=sys.argv)
+    # Initialize the node, and call it "driver".
+    rospy.init_node('stopper', argv=sys.argv)
 
-	# Set up a publisher.  The default topic for Twist messages is cmd_vel.
-	publisher = rospy.Publisher('cmd_vel', Twist, queue_size=10)
+    # Set up a publisher.  The default topic for Twist messages is cmd_vel.
+    publisher = rospy.Publisher('cmd_vel', Twist, queue_size=10)
 
-	# Set up a subscriber.  The default topic for LaserScan messages is base_scan.
-	subscriber = rospy.Subscriber('base_scan', LaserScan, callback, queue_size=10)
+    # Set up a subscriber.  The default topic for LaserScan messages is base_scan.
+    subscriber = rospy.Subscriber('base_scan', LaserScan, callback, queue_size=10)
 
-	# Now that everything is wired up, we just spin.
-	rospy.spin()
-
-
+    # Now that everything is wired up, we just spin.
+    rospy.spin()
 
 
-""" # Here is the straight motion of the robot
-	
-		shoulder_width = 0.38
-		num_readings = len(lidar.ranges)
+"""# Here is the straight motion of the robot
+    
+        shoulder_width = 0.38
+        num_readings = len(lidar.ranges)
 
-		# Init the angles and distances for storing points infront of rthe robot
-		points_in_front = {
-			"thetas": [],
-			"distances": []
-		}
+        # Init the angles and distances for storing points infront of rthe robot
+        points_in_front = {
+            "thetas": [],
+            "distances": []
+        }
 
-		# Determine which readings are in front of the robot (within 19 cm of center)
-		for i in range(num_readings):
-			theta = lidar.angle_min + ( lidar.angle_increment * i )
-			distance = lidar.ranges[i]
+        # Determine which readings are in front of the robot (within 19 cm of center)
+        for i in range(num_readings):
+            theta = lidar.angle_min + ( lidar.angle_increment * i )
+            distance = lidar.ranges[i]
 
-			# Convert polar to cartesian
-			x = distance * np.sin(theta)
-			y = distance * np.cos(theta)
+            # Convert polar to cartesian
+            x = distance * np.sin(theta)
+            y = distance * np.cos(theta)
 
-			# Check if point is in front of robot and append to lists if so
-			if abs(y) <= shoulder_width / 2:
-				points_in_front["thetas"].append(theta)
-				points_in_front["distances"].append(distance)
-		
-		# Determine the minimum distance to an obstacle in front of the robot
-		min_distance_in_front = min(points_in_front["distances"])
+            # Check if point is in front of robot and append to lists if so
+            if abs(y) <= shoulder_width / 2:
+                points_in_front["thetas"].append(theta)
+                points_in_front["distances"].append(distance)
+        
+        # Determine the minimum distance to an obstacle in front of the robot
+        min_distance_in_front = min(points_in_front["distances"])
 
-		# Determine speed based on distance to closest obstacle
-		command.linear.x = tanh( (min_distance_in_front - 1.0) / 1.0 ) """
+        # Determine speed based on distance to closest obstacle
+        command.linear.x = tanh( (min_distance_in_front - 1.0) / 1.0 )"""
