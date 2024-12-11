@@ -177,9 +177,11 @@ def dijkstra(im, robot_loc, goal_loc):
 
     # Sanity check
     if not is_free(im, robot_loc):
+        print("uh oh")
         raise ValueError(f"Start location {robot_loc} is not in the free space of the map")
 
     if not is_free(im, goal_loc):
+        print("uh oh 2")
         raise ValueError(f"Goal location {goal_loc} is not in the free space of the map")
 
     # The priority queue itself is just a list, with elements of the form (weight, (i,j))
@@ -189,7 +191,7 @@ def dijkstra(im, robot_loc, goal_loc):
     #   push takes the queue itself, then a tuple with the first element the priority value and the second
     #   being whatever data you want to keep - in this case, the robot location, which is a tuple
     heapq.heappush(priority_queue, (0, robot_loc))
-
+    print("are we here 1")
     # The power of dictionaries - we're going to use a dictionary to store every node we've visited, along
     #   with the node we came from and the current distance
     # This is easier than trying to get the distance from the heap
@@ -197,7 +199,7 @@ def dijkstra(im, robot_loc, goal_loc):
     # Use the (i,j) tuple to index the dictionary
     #   Store the best distance, the parent, and if closed y/n
     visited[robot_loc] = (0, None, False)  # For every other node this will be the current_node, distance
-
+    print("are we here 2")
     # While the list is not empty - use a break for if the node is the end node
     while priority_queue:
         # Get the current best node off of the list
