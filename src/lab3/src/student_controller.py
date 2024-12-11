@@ -125,7 +125,9 @@ class StudentController(RobotController):
             self.set_waypoints(waypoints)
 
             # rospy.loginfo(f'Robot is at {robot_position} {point.header.frame_id}')
-        except:
+        except Exception as e:
+            import traceback
+            rospy.logerr(f"Error in map_update: {e} \n {traceback.format_exc()}")
             rospy.loginfo('No odometry information')
 
 
