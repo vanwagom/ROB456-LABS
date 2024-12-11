@@ -19,6 +19,10 @@ import heapq
 # Using imageio to read in the image
 import imageio
 
+import rospy
+import matplotlib.pyplot as plt
+import os
+
 
 # -------------- Showing start and end and path ---------------
 def plot_with_path(im, im_threshhold, zoom=1.0, robot_loc=None, goal_loc=None, path=None):
@@ -174,6 +178,16 @@ def dijkstra(im, robot_loc, goal_loc):
     @param robot_loc - where the robot is (tuple, i,j)
     @param goal_loc - where to go to (tuple, i,j)
     @returns a list of tuples"""
+
+    rospy.loginfo("Saving dijkstra's image")
+    fig, ax = plt.subplots()
+    plt.imshow(im[1800:2200, 1800:2200], cmap='plasma')
+    ax.scatter([robot_loc[0] - 1800], [robot_loc[1] - 1800], color='green', marker='*', s=100)
+    ax.scatter([goal_loc[0] - 1800], [goal_loc[1] - 1800], color='red', marker='x', s=100)
+    ax.invert_yaxis()
+    plt.colorbar()
+    plt.savefig(os.path.expanduser("~/ros_ws/src/lab3/images/dijkstras.png"))
+    rospy.loginfo("Saved dijkstra's image")
 
     # Sanity check
     if not is_free(im, robot_loc):
