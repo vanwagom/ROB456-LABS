@@ -183,10 +183,10 @@ def dijkstra(im, robot_loc, goal_loc):
     fig, ax = plt.subplots()
     plt.imshow(im[1800:2200, 1800:2200], cmap='plasma')
     ax.scatter([robot_loc[0] - 1800], [robot_loc[1] - 1800], color='green', marker='*', s=100)
-    ax.scatter([goal_loc[0] - 1800], [goal_loc[1] - 1800], color='red', marker='x', s=100)
+    #ax.scatter([goal_loc[0] - 1800], [goal_loc[1] - 1800], color='red', marker='x', s=100)
     ax.invert_yaxis()
     plt.colorbar()
-    plt.savefig(os.path.expanduser("~/ros_ws/src/lab3/images/dijkstras.png"))
+    plt.savefig("djikstra.png")
     rospy.loginfo("Saved dijkstra's image")
 
     # Sanity check
