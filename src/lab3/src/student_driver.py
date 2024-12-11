@@ -6,13 +6,14 @@ import rospy
 
 from new_driver import Driver
 
-from math import atan2, sqrt
+from math import atan2, sqrt, tanh
+import numpy as np
 
 
 class StudentDriver(Driver):
 	'''
-	This class implements the logic to move the robot to a specific place in the world.  All of the
-	interesting functionality is hidden in the parent class.
+	This class implements the logic to move the robot to a specific place in the world.
+	All the interesting functionality is hidden in the parent class.
 	'''
 	def __init__(self, threshold=0.1):
 		super().__init__('odom')
@@ -48,18 +49,71 @@ class StudentDriver(Driver):
 		Returns:
 			A Twist message, containing the commanded robot velocities.
 		'''
-		angle = atan2(target[1], target[0])
-		distance = sqrt(target[0] ** 2 + target[1] **2)
-		rospy.loginfo(f'Distance: {distance:.2f}, angle: {angle:.2f}')
-
-		# This builds a Twist message with all elements set to zero.
 		command = Driver.zero_twist()
 
-		# Forwards velocity goes here, in meters per second.
-		command.linear.x = 0.1
+		# TODO:
+		#  Step 1) Calculate the angle the robot has to turn to in order to point at the target
+		#  Step 2) Set your speed based on how far away you are from the target, as before
+		#  Step 3) Add code that veers left (or right) to avoid an obstacle in front of it
 
-		# Rotational velocity goes here, in radians per second.  Positive is counter-clockwise.
-		command.angular.z = 0.1
+		target_x = target[0]
+		target_y = target[1]
+		target_distance = sqrt(target_x ** 2 + target_y ** 2)
+		target_theta = atan2(target_y, target_x)
+		shoulder_width = 0.38
+
+		# Init the angles and distances for storing points in front of the robot
+		points = {
+			"thetas": [],
+			"distances": []
+		}
+
+		# Code to determine whether the robot should rotate, or move forward. loop through ranges
+		for i, ind_range in enumerate(lidar.ranges):
+			if not np.isfinite(ind_range) or ind_range <= 0:
+				continue  # Skip invalid values
+
+			theta = lidar.angle_min + (lidar.angle_increment * i)
+
+			points["thetas"].append(theta)
+			points["distances"].append(ind_range)
+
+		# Find the distance reading that matches the target theta in points, find the closest point in the direction
+		# of the target
+		theta_differences = [abs(theta - target_theta) for theta in points["thetas"]]
+		if theta_differences:
+			closest_theta_idx = np.argmin(theta_differences)
+			matching_distance = points["distances"][closest_theta_idx]
+		else:
+			matching_distance = float('inf')  # No obstacle in the target direction
+
+		if matching_distance < target_distance:
+			# There is something in the way between the robot and the target, search through the points to find an
+			# clear path
+			sorted_points = np.argsort(theta_differences)
+
+			clear_theta = None
+			for i, theta in enumerate(points["thetas"]):
+				y = points["distances"][i] * np.sin(theta)
+				if abs(y) > shoulder_width / 2 and points["distances"][i] > 2.0:
+					clear_theta = theta
+					break
+
+			# If there is a clear path, turn to face the clear path and move the distance of the object
+			if clear_theta is not None:
+				command.angular.z = clear_theta
+				command.linear.x = tanh(matching_distance)
+				print(f"Turning to face {clear_theta:.2f} and moving {matching_distance:.2f}")
+			else:
+				# There is no clear path, stop the robot
+				command.linear.x = 0.0
+				print("No clear path, stopping")
+
+		# If no obstacle between robot and target, continue forward
+		else:
+			command.angular.z = target_theta
+			command.linear.x = tanh(target_distance)
+			print(f"No obstacle, moving toward target")
 
 		return command
 

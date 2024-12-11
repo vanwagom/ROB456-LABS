@@ -46,7 +46,7 @@ def plot_with_path(im, im_threshhold, zoom=1.0, robot_loc=None, goal_loc=None, p
                 axs[1].plot(i, j, '.b')
     """
 
-    # Double checking lower left corner
+    # Double-checking lower left corner
     axs[1].plot(10, 5, 'xy', markersize=5)
 
     # Show original and thresholded image
@@ -121,6 +121,28 @@ def convert_image(im, wall_threshold, free_threshold):
     return im_ret
 
 
+def fatten_image(im, pixels):
+    """ Expand all walls by 4 pixels
+    @param im - the image
+    @return the fattened image"""
+
+    w, h = im.shape
+
+    im_ret = im.copy()
+
+    all_wall = np.argwhere(im_ret == 0)
+
+    for pix in all_wall:
+        for i in range(-pixels, pixels):
+            for j in range(-pixels, pixels):
+                if pix[0] + j >= w or pix[1] + i >= h:
+                    continue
+
+                im_ret[pix[0] + j, pix[1] + i] = 0
+
+    return im_ret
+
+
 # -------------- Getting 4 or 8 neighbors ---------------
 def four_connected(pix):
     """ Generator function for 4 neighbors
@@ -174,7 +196,7 @@ def dijkstra(im, robot_loc, goal_loc):
     visited = {}
     # Use the (i,j) tuple to index the dictionary
     #   Store the best distance, the parent, and if closed y/n
-    visited[robot_loc] = (0, None, False)   # For every other node this will be the current_node, distance
+    visited[robot_loc] = (0, None, False)  # For every other node this will be the current_node, distance
 
     # While the list is not empty - use a break for if the node is the end node
     while priority_queue:
@@ -183,8 +205,7 @@ def dijkstra(im, robot_loc, goal_loc):
 
         # Get the data back out of visited for the current best node in priority_queue
         visited_distance, visited_parent, visited_closed_yn = visited[node_ij]
-        
-        
+
         # TODO
         #  Step 1: Break out of the loop if node_ij is the goal node
         #  Step 2: If this node is closed, skip it
@@ -193,15 +214,15 @@ def dijkstra(im, robot_loc, goal_loc):
         #  Lec 8_1: Planning, at the end
         #  https://docs.google.com/presentation/d/1pt8AcSKS2TbKpTAVV190pRHgS_M38ldtHQHIltcYH6Y/edit#slide=id.g18d0c3a1e7d_0_0
         # YOUR CODE HERE
-        
+
         # Break the loop if the current node is the location node
         if node_ij == goal_loc:
             break
-        
+
         # If the node is closed skip
         if visited_closed_yn:
             continue
-        
+
         # Set the current node as visited (need to create new tuple as they are immutable)
         visited[node_ij] = (visited_distance, visited_parent, True)
 
@@ -210,13 +231,13 @@ def dijkstra(im, robot_loc, goal_loc):
 
         # Iterate over each of the neighbor nodes, determine if it is travelable (ie not out of bouds or a wall), then find it's distance from the current node and distance to the goal.
         for adj_node in eight_connected(node_ij):
-            
+
             # Skip out-of-bounds nodes
             if adj_node[0] < 0 or adj_node[1] < 0 or adj_node[0] >= im.shape[1] or adj_node[1] >= im.shape[0]:
                 continue
 
             # Skip the node if it's not free 
-            if not is_free(im, adj_node):  
+            if not is_free(im, adj_node):
                 continue
 
             new_distance = visited_distance + edge_cost
@@ -224,14 +245,13 @@ def dijkstra(im, robot_loc, goal_loc):
             # Check if the adj node has been visited and if it's closer than the current node
             if adj_node not in visited or new_distance < visited[adj_node][0]:
                 visited[adj_node] = (new_distance, node_ij, False)
-                heapq.heappush(priority_queue, (new_distance, adj_node))       
-        
-    
-    # TODO: Deal with not being able to get to the goal loc
+                heapq.heappush(priority_queue, (new_distance, adj_node))
+
+                # TODO: Deal with not being able to get to the goal loc
     # BEGIN SOLULTION
 
     if goal_loc not in visited:
-        
+
         # Find the closest node to the goal that wasn't closed
         closest_node = min(
             (node for node in visited if not visited[node][2]),
@@ -249,13 +269,12 @@ def dijkstra(im, robot_loc, goal_loc):
 
     # Construct the path by backtracking from the goal location
     path = []
-    travel = goal_loc # Start at the goal location
+    travel = goal_loc  # Start at the goal location
     while travel is not None:
         path.append(travel)
-        travel = visited[travel][1] # Get the parent of the current node to travel backwards through the path
-    
-    return path[::-1] # Reverse the path so it's in the right order and return it
+        travel = visited[travel][1]  # Get the parent of the current node to travel backwards through the path
 
+    return path[::-1]  # Reverse the path so it's in the right order and return it
 
 
 def open_image(im_name):
@@ -281,7 +300,6 @@ def open_image(im_name):
 
     im_thresh = convert_image(im, wall_threshold, free_threshold)
     return im, im_thresh
-
 
 
 if __name__ == '__main__':

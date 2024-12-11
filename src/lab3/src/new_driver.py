@@ -107,7 +107,8 @@ class Driver:
 					command = Driver.zero_twist()
 				else:
 					command = self.get_twist((target.point.x, target.point.y), lidar)
-			except:
+			except Exception as e:
+				rospy.logerr(f"Error in _lidar_callback: {e}")
 				return
 		else:
 			command = Driver.zero_twist()
