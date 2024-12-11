@@ -70,12 +70,12 @@ class StudentController(RobotController):
         # If we don't have our current location, return
         if point is None or map is None:
             rospy.loginfo('Point is none, skipping path update')
+            print("does this even make it through?")
             return
 
         # If we already made a path plan recently, return
         if self.last_plan_at is not None and (time.time() - self.last_plan_at) < 5:
-            rospy.loginfo(
-                f'Got path update request, but already updated too recently {time.time() - self.last_plan_at}')
+            rospy.loginfo(f'Got path update req, but already updated too recently {time.time() - self.last_plan_at}')
             return
 
         # If we still have waypoints left to go, return (unless we force the generation)
