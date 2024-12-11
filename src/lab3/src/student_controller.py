@@ -75,8 +75,8 @@ class StudentController(RobotController):
             im_thresh = path_planning.convert_image(im, 0.7, 0.9)
             print("got image threshold")
 
-            fatten_pixels = int(np.ceil(0.19 / map_data.resolution)) + 1
-            im_thresh_fattened = path_planning.fatten_image(im_thresh, fatten_pixels)
+            #fatten_pixels = int(np.ceil(0.19 / map_data.resolution)) + 1
+            im_thresh_fattened = im_thresh #path_planning.fatten_image(im_thresh, fatten_pixels)
             print("got fat image :3")
 
             if self.goal is None:
