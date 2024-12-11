@@ -23,6 +23,8 @@ class Driver:
 		self._target_point = None
 		self._threshold = threshold
 
+		self.need_to_spin = True
+
 		self.transform_listener = tf.TransformListener()
 
 		self._cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
@@ -45,6 +47,14 @@ class Driver:
 		t.angular.z = 0.0
 
 		return t
+
+	def spin_around_robot(self):
+		# will run once at initialization, then runs at each waypoint to fill the space.
+		# inefficient, but it should work. Will try to make spin at final goal instead.
+		command = Driver.zero_twist()
+		command.angular.z = 360
+		self.need_to_spin = False
+		return command
 
 	# Respond to the action request.
 	def _action_callback(self, goal):
@@ -88,6 +98,9 @@ class Driver:
 		self._action_server.set_succeeded(result)
 
 	def _lidar_callback(self, lidar):
+		if self.need_to_spin:
+			# will bypass remaining code and make robot spin first before proceeding
+			command = self.spin_around_robot()
 		if self._target_point:
 			self._target_point.header.stamp = rospy.Time.now()
 			try:
@@ -104,6 +117,7 @@ class Driver:
 				#  close_enough_to_waypoint to return True for that case
 				if self.close_enough_to_waypoint(distance, (target.point.x, target.point.y), lidar):
 					self._target_point = None
+					self.need_to_spin = True
 					command = Driver.zero_twist()
 				else:
 					command = self.get_twist((target.point.x, target.point.y), lidar)
