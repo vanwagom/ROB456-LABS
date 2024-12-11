@@ -95,6 +95,7 @@ class StudentController(RobotController):
             else:
                 robot_in_map = (x, y)
             print("robot_in_map: ", robot_in_map)
+            print("map_data.width, height ", map_data.width, "-", map_data.height)
 
             im = np.array(map.data).reshape(map.info.height, map.info.width)
             im_thresh = path_planning.convert_image(im, 0.8, 0.2)
@@ -127,7 +128,7 @@ class StudentController(RobotController):
             # rospy.loginfo(f'Robot is at {robot_position} {point.header.frame_id}')
         except Exception as e:
             import traceback
-            rospy.logerr(f"Error in map_update: {e} \n {traceback.format_exc()}")
+            rospy.loginfo(f"Error in map_update: {e} \n {traceback.format_exc()}")
             rospy.loginfo('No odometry information')
 
 
