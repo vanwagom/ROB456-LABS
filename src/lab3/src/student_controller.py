@@ -5,6 +5,7 @@ import sys
 import rospy
 import signal
 import numpy as np
+import time
 
 from controller import RobotController
 import path_planning
@@ -36,6 +37,9 @@ class StudentController(RobotController):
 
         self.goal = None
 
+        self.force = False
+        self.last_plan_at = None
+
     def distance_update(self, distance):
         """
         This function is called every time the robot moves towards a goal.  If you want to make sure that
@@ -62,6 +66,23 @@ class StudentController(RobotController):
             map_data:	A MapMetaData containing the current map meta data.
         """
         rospy.loginfo('Got a map update.')
+
+        # If we don't have our current location, return
+        if point is None or map is None:
+            rospy.loginfo('Point is none, skipping path update')
+            return
+
+        # If we already made a path plan recently, return
+        if self.last_plan_at is not None and (time.time() - self.last_plan_at) < 5:
+            rospy.loginfo(
+                f'Got path update request, but already updated too recently {time.time() - self.last_plan_at}')
+            return
+
+        # If we still have waypoints left to go, return (unless we force the generation)
+        if not self.force:
+            if self._waypoints is not None and len(self._waypoints) > 0:
+                rospy.loginfo(f'Got path update request, but {len(self._waypoints)} waypoints remain')
+                return
 
         try:
             # The (x, y) position of the robot can be retrieved like this.
