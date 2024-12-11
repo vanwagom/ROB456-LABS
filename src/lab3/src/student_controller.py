@@ -66,9 +66,13 @@ class StudentController(RobotController):
         try:
             # The (x, y) position of the robot can be retrieved like this.
             robot_position = (point.point.x, point.point.y)
-            x = int(robot_position[0] / map_data.resolution + map.info.width / 2)
-            y = int(robot_position[1] / map_data.resolution + map.info.height / 2)
-            robot_in_map = (x, y)
+            x = int((robot_position[0] - map_data.origin.position.x) / map_data.resolution)
+            y = int((robot_position[1] - map_data.origin.position.y) / map_data.resolution)
+            if x < 0 or x >= map_data.width or y < 0 or y >= map_data.height:
+                robot_in_map = None
+                print("out of bounds!!!!!")
+            else:
+                robot_in_map = (x, y)
             print("robot_in_map: ", robot_in_map)
 
             im = np.array(map.data).reshape(map.info.height, map.info.width)
@@ -84,10 +88,9 @@ class StudentController(RobotController):
                 if all_unseen is None:
                     rospy.loginfo('Done, Stopped!')
                     rospy.signal_shutdown('Done exploring!')
-
                     return
 
-                print("trying for best points")
+                print("trying for best points ", all_unseen)
                 self.goal = exploring.find_best_point(im_thresh_fattened, all_unseen, robot_in_map)
                 print("got best points")
 
