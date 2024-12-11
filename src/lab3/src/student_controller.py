@@ -84,47 +84,49 @@ class StudentController(RobotController):
                 rospy.loginfo(f'Got path update request, but {len(self._waypoints)} waypoints remain')
                 return
 
+        try:
+            # The (x, y) position of the robot can be retrieved like this.
+            robot_position = (point.point.x, point.point.y)
+            x = int((robot_position[0] - map_data.origin.position.x) / map_data.resolution)
+            y = int((robot_position[1] - map_data.origin.position.y) / map_data.resolution)
+            if x < 0 or x >= map_data.width or y < 0 or y >= map_data.height:
+                robot_in_map = None
+                print("out of bounds!!!!!")
+            else:
+                robot_in_map = (x, y)
+            print("robot_in_map: ", robot_in_map)
 
-        # The (x, y) position of the robot can be retrieved like this.
-        robot_position = (point.point.x, point.point.y)
-        x = int((robot_position[0] - map_data.origin.position.x) / map_data.resolution)
-        y = int((robot_position[1] - map_data.origin.position.y) / map_data.resolution)
-        if x < 0 or x >= map_data.width or y < 0 or y >= map_data.height:
-            robot_in_map = None
-            print("out of bounds!!!!!")
-        else:
-            robot_in_map = (x, y)
-        print("robot_in_map: ", robot_in_map)
+            im = np.array(map.data).reshape(map.info.height, map.info.width)
+            im_thresh = path_planning.convert_image(im, 0.8, 0.2)
+            print("got image threshold")
 
-        im = np.array(map.data).reshape(map.info.height, map.info.width)
-        im_thresh = path_planning.convert_image(im, 0.8, 0.2)
-        print("got image threshold")
+            #fatten_pixels = int(np.ceil(0.19 / map_data.resolution)) + 1
+            im_thresh_fattened = im_thresh #path_planning.fatten_image(im_thresh, fatten_pixels)
+            print("got fat image :3")
 
-        #fatten_pixels = int(np.ceil(0.19 / map_data.resolution)) + 1
-        im_thresh_fattened = im_thresh #path_planning.fatten_image(im_thresh, fatten_pixels)
-        print("got fat image :3")
+            if self.goal is None:
+                all_unseen = exploring.find_all_possible_goals(im_thresh_fattened)
+                if all_unseen is None:
+                    rospy.loginfo('Done, Stopped!')
+                    rospy.signal_shutdown('Done exploring!')
+                    return
 
-        if self.goal is None:
-            all_unseen = exploring.find_all_possible_goals(im_thresh_fattened)
-            if all_unseen is None:
-                rospy.loginfo('Done, Stopped!')
-                rospy.signal_shutdown('Done exploring!')
-                return
+                print("trying for best points ", all_unseen)
+                self.goal = exploring.find_best_point(im_thresh_fattened, all_unseen, robot_in_map)
+                print("got best points")
 
-            print("trying for best points ", all_unseen)
-            self.goal = exploring.find_best_point(im_thresh_fattened, all_unseen, robot_in_map)
-            print("got best points")
+            print("goal: ", self.goal)
+            path = path_planning.dijkstra(im_thresh_fattened, robot_in_map, self.goal)
+            print("dijkstra done")
+            waypoints = exploring.find_waypoints(im_thresh, path)
+            print("waypoints done, setting...")
 
-        print("goal: ", self.goal)
-        path = path_planning.dijkstra(im_thresh_fattened, robot_in_map, self.goal)
-        print("dijkstra done")
-        waypoints = exploring.find_waypoints(im_thresh, path)
-        print("waypoints done, setting...")
+            # waypoints = [((x - 2000) * map_data.resolution, (y - 2000) * map_data.resolution) for x, y in waypoints]
+            self.set_waypoints(waypoints)
 
-        # waypoints = [((x - 2000) * map_data.resolution, (y - 2000) * map_data.resolution) for x, y in waypoints]
-        self.set_waypoints(waypoints)
-
-        # rospy.loginfo(f'Robot is at {robot_position} {point.header.frame_id}')
+            # rospy.loginfo(f'Robot is at {robot_position} {point.header.frame_id}')
+        except:
+            rospy.loginfo('No odometry information')
 
 
 if __name__ == '__main__':
