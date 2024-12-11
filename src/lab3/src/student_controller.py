@@ -70,12 +70,12 @@ class StudentController(RobotController):
         # If we don't have our current location, return
         if point is None or map is None:
             rospy.loginfo('Point is none, skipping path update')
-            print("does this even make it through?")
             return
 
         # If we already made a path plan recently, return
         if self.last_plan_at is not None and (time.time() - self.last_plan_at) < 5:
-            rospy.loginfo(f'Got path update req, but already updated too recently {time.time() - self.last_plan_at}')
+            rospy.loginfo(
+                f'Got path update request, but already updated too recently {time.time() - self.last_plan_at}')
             return
 
         # If we still have waypoints left to go, return (unless we force the generation)
@@ -91,18 +91,18 @@ class StudentController(RobotController):
             y = int((robot_position[1] - map_data.origin.position.y) / map_data.resolution)
             if x < 0 or x >= map_data.width or y < 0 or y >= map_data.height:
                 robot_in_map = None
-                rospy.loginfo("out of bounds!!!!!")
+                print("out of bounds!!!!!")
             else:
                 robot_in_map = (x, y)
-            rospy.loginfo("robot_in_map: ", robot_in_map)
+            print("robot_in_map: ", robot_in_map)
 
             im = np.array(map.data).reshape(map.info.height, map.info.width)
             im_thresh = path_planning.convert_image(im, 0.8, 0.2)
-            rospy.loginfo("got image threshold")
+            print("got image threshold")
 
             #fatten_pixels = int(np.ceil(0.19 / map_data.resolution)) + 1
             im_thresh_fattened = im_thresh #path_planning.fatten_image(im_thresh, fatten_pixels)
-            rospy.loginfo("got fat image :3")
+            print("got fat image :3")
 
             if self.goal is None:
                 all_unseen = exploring.find_all_possible_goals(im_thresh_fattened)
@@ -111,15 +111,15 @@ class StudentController(RobotController):
                     rospy.signal_shutdown('Done exploring!')
                     return
 
-                rospy.loginfo("trying for best points ", all_unseen)
+                print("trying for best points ", all_unseen)
                 self.goal = exploring.find_best_point(im_thresh_fattened, all_unseen, robot_in_map)
-                rospy.loginfo("got best points")
+                print("got best points")
 
-            rospy.loginfo("goal: ", self.goal)
+            print("goal: ", self.goal)
             path = path_planning.dijkstra(im_thresh_fattened, robot_in_map, self.goal)
-            rospy.loginfo("dijkstra done")
+            print("dijkstra done")
             waypoints = exploring.find_waypoints(im_thresh, path)
-            rospy.loginfo("waypoints done, setting...")
+            print("waypoints done, setting...")
 
             # waypoints = [((x - 2000) * map_data.resolution, (y - 2000) * map_data.resolution) for x, y in waypoints]
             self.set_waypoints(waypoints)

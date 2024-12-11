@@ -103,17 +103,17 @@ class StudentDriver(Driver):
 			if clear_theta is not None:
 				command.angular.z = clear_theta
 				command.linear.x = tanh(matching_distance)
-				rospy.loginfo(f"Turning to face {clear_theta:.2f} and moving {matching_distance:.2f}")
+				print(f"Turning to face {clear_theta:.2f} and moving {matching_distance:.2f}")
 			else:
 				# There is no clear path, stop the robot
 				command.linear.x = 0.0
-				rospy.loginfo("No clear path, stopping")
+				print("No clear path, stopping")
 
 		# If no obstacle between robot and target, continue forward
 		else:
 			command.angular.z = target_theta
 			command.linear.x = tanh(target_distance)
-			rospy.loginfo(f"No obstacle, moving toward target")
+			print(f"No obstacle, moving toward target")
 
 		return command
 
