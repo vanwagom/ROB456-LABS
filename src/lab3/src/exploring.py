@@ -130,33 +130,21 @@ def find_all_possible_goals(im):
     @return: List of possible goal pixel coordinates (tuples).
     """
 
-    # List of 8 neighbor offsets
-    neighbors = [(x, y) for x in [-1, 0, 1] for y in [-1, 0, 1] if (x, y) != (0, 0)]
+    neighbors = [(x, y) for x in [-1, 0, -1] for y in [-1, 0, 1] if (x, y) != (0, 0)]
 
-    # Create mask for unknown pixels
-    unknown_value = 128
-    unknown_mask = (im == unknown_value)
-
-    # Create mask for free pixels
+    unknown_mask = (im == 128)
     free_mask = (im == 255)
 
-    # Init a mask for valid neighbors
-    neighbor_mask = np.zeros_like(im, dtype=bool)
+    goal_mask = np.zeros_like(im, dtype=bool)
 
-    # Roll free pixel neighbors
     for di, dj in neighbors:
-        neighbor_mask = np.roll(np.roll(free_mask, di, axis=0), dj, axis=1)
+        shifted_free_mask = np.roll(np.roll(free_mask, di, axis=0), dj, axis=1)
+        goal_mask |= (unknown_mask & shifted_free_mask)
 
-    # Combine masks to find unknown pixels next to free pixels
-    possible_goal_mask = neighbor_mask & unknown_mask
+    possible_goals = np.argwhere(goal_mask)
+    flipped_goals = [(coord[1], coord[0]) for coord in possible_goals]
 
-    # Find coordinates of possible goal pixels
-    possible_goals = np.argwhere(possible_goal_mask)
-
-    # Filter using is_reachable
-    possible_goals = [tuple(coord) for coord in possible_goals if is_reachable(im, tuple(coord))]
-
-    return possible_goals
+    return flipped_goals
 
 
 def find_best_point(im, possible_points, robot_loc, min_area=0.5):
