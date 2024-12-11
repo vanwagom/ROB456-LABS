@@ -72,7 +72,7 @@ class StudentController(RobotController):
             print("robot_in_map: ", robot_in_map)
 
             im = np.array(map.data).reshape(map.info.height, map.info.width)
-            im_thresh = path_planning.convert_image(im, 0.7, 0.9)
+            im_thresh = path_planning.convert_image(im, 0.5, 0.5)
             print("got image threshold")
 
             #fatten_pixels = int(np.ceil(0.19 / map_data.resolution)) + 1
@@ -88,9 +88,10 @@ class StudentController(RobotController):
                     return
 
                 print("trying for best points")
-                self.goal = exploring.find_best_point(im_thresh_fattened, all_unseen, robot_loc=robot_in_map)
+                self.goal = exploring.find_best_point(im_thresh_fattened, all_unseen, robot_in_map)
                 print("got best points")
 
+            print("goal: ", self.goal)
             path = path_planning.dijkstra(im_thresh_fattened, robot_in_map, self.goal)
             print("dijkstra done")
             waypoints = exploring.find_waypoints(im_thresh, path)
