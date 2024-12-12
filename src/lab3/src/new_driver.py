@@ -95,7 +95,7 @@ class Driver:
 				self._target_point = None
 				result.success.data = False
 				self._action_server.set_succeeded(result)
-				return		# trying shit
+				return
 
 			self.target_pub.publish(marker)
 			rate.sleep()
