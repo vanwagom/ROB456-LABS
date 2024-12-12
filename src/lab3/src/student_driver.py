@@ -6,7 +6,7 @@ import rospy
 
 from new_driver import Driver
 
-from math import atan2, sqrt
+from math import atan2, sqrt, sin, tanh
 
 
 class StudentDriver(Driver):
@@ -14,7 +14,7 @@ class StudentDriver(Driver):
 	This class implements the logic to move the robot to a specific place in the world.  All of the
 	interesting functionality is hidden in the parent class.
 	'''
-	def __init__(self, threshold=0.1):
+	def __init__(self, threshold=0.5):
 		super().__init__('odom')
 		# Set the threshold to a reasonable number
 		self._threshold = threshold
@@ -27,7 +27,17 @@ class StudentDriver(Driver):
 		'''
 		# Default behavior.
 		if distance < self._threshold:
+			point_angle = atan2(target[1], target[0]) 
+			for i, range in enumerate(lidar.ranges):# Check if any lidar reading is within a short distance and in the vicinity of the target angle
+				angle_rad = lidar.angle_min + i * lidar.angle_increment
+				if abs(angle_rad - point_angle) < lidar.angle_increment:# If the angle of the lidar scan is close to the target point's angle
+					if range < 0.2:  # If there's an obstacle within a close range to the target point, return False
+						return False
+			# If the distance is within threshold and no obstacles detected, return True
+			rospy.loginfo('Target is reachable and path is clear.')
 			return True
+
+			# If the distance is greater than the threshold, return False
 		return False
 
 	def get_twist(self, target, lidar):
@@ -48,18 +58,40 @@ class StudentDriver(Driver):
 		Returns:
 			A Twist message, containing the commanded robot velocities.
 		'''
-		angle = atan2(target[1], target[0])
+		theta = atan2(target[1], target[0])
 		distance = sqrt(target[0] ** 2 + target[1] **2)
-		rospy.loginfo(f'Distance: {distance:.2f}, angle: {angle:.2f}')
+		rospy.loginfo(f'Distance: {distance:.2f}, angle: {theta:.2f}')
 
 		# This builds a Twist message with all elements set to zero.
 		command = Driver.zero_twist()
+		shortest = max(lidar.ranges)
+		for i, range in enumerate(lidar.ranges):
+			angle_rad = lidar.angle_min + i*lidar.angle_increment
+			abs_y = abs(range * sin(angle_rad)) 
+			if abs_y < 0.19:
+				shortest  = min(shortest, range)#Grabs shortest range
+			if range < 0.60: #If lidar detects wall in close to robot, moves robot based off what region the scan is in
+				if -0.3 < angle_rad < 0:  # Front right region
+					theta += 0.1
+				elif 0 < angle_rad < 0.3: #Front left region
+					theta -= 0.1
+				elif 0.3 <= angle_rad < 1.0:  # Left region
+					theta -= 0.25
+				elif -1.0 < angle_rad <= -0.3:  # Right region
+					theta += 0.25
+				if range < 0.2:
+					if 1.0 <= angle_rad < 1.4:  # Extreme Left region
+						theta -= 0.6
+					elif -1.4 < angle_rad <= -1.0:
+						theta  += 0.6
 
-		# Forwards velocity goes here, in meters per second.
-		command.linear.x = 0.1
-
-		# Rotational velocity goes here, in radians per second.  Positive is counter-clockwise.
-		command.angular.z = 0.1
+		if (shortest - 0.4) < 0.01: #Stops if robot is to close to the wall
+			command.linear.x = 0
+		else:
+			# This sets the move forward speed (as before)
+			command.linear.x = tanh(distance)
+	# This sets the angular turn speed (in radians per second)
+		command.angular.z = theta
 
 		return command
 
