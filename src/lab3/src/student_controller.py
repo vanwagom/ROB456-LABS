@@ -98,26 +98,22 @@ class StudentController(RobotController):
             print("map_data.width, height ", map_data.width, "-", map_data.height)
 
             im = np.array(map.data).reshape(map.info.height, map.info.width)
-            im_thresh = path_planning.convert_image(im, 0.8, 0.2)
+            im_thresh = path_planning.convert_image(im, 0.5, 0.5)
             print("got image threshold")
 
-            #fatten_pixels = int(np.ceil(0.19 / map_data.resolution)) + 1
-            im_thresh_fattened = im_thresh #path_planning.fatten_image(im_thresh, fatten_pixels)
-            print("got fat image :3")
-
             if self.goal is None:
-                all_unseen = exploring.find_all_possible_goals(im_thresh_fattened)
+                all_unseen = exploring.find_all_possible_goals(im_thresh)
                 if all_unseen is None:
                     rospy.loginfo('Done, Stopped!')
                     rospy.signal_shutdown('Done exploring!')
                     return
 
                 print("trying for best points ", all_unseen)
-                self.goal = exploring.find_best_point(im_thresh_fattened, all_unseen, robot_in_map)
+                self.goal = exploring.find_best_point(im_thresh, all_unseen, robot_in_map)
                 print("got best points")
 
             print("goal: ", self.goal)
-            path = path_planning.dijkstra(im_thresh_fattened, robot_in_map, self.goal)
+            path = path_planning.dijkstra(im_thresh, robot_in_map, self.goal)
             print("dijkstra done")
             waypoints = exploring.find_waypoints(im_thresh, path)
             print("waypoints done, setting...")

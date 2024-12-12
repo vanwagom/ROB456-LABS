@@ -120,30 +120,8 @@ def convert_image(im, wall_threshold, free_threshold):
     im_avg = im_avg / np.max(im_avg)
     # threshold
     #   in our example image, black is walls, white is free
-    im_ret[im_avg < wall_threshold] = 0
-    im_ret[im_avg > free_threshold] = 255
-    return im_ret
-
-
-def fatten_image(im, pixels):
-    """ Expand all walls by 4 pixels
-    @param im - the image
-    @return the fattened image"""
-
-    w, h = im.shape
-
-    im_ret = im.copy()
-
-    all_wall = np.argwhere(im_ret == 0)
-
-    for pix in all_wall:
-        for i in range(-pixels, pixels):
-            for j in range(-pixels, pixels):
-                if pix[0] + j >= w or pix[1] + i >= h:
-                    continue
-
-                im_ret[pix[0] + j, pix[1] + i] = 0
-
+    im_ret[im > wall_threshold] = 0
+    im_ret[(im < free_threshold) & (im != -1)] = 255
     return im_ret
 
 
