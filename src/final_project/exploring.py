@@ -56,7 +56,7 @@ def plot_with_explore_points(im_threshhold, zoom=1.0, robot_loc=None, explore_po
     # Show original and thresholded image
     if explore_points is not None:
         for p in explore_points:
-            axs[1].plot(p[1], p[0], '.b', markersize=1)
+            axs[1].plot(p[0], p[1], '.b', markersize=1)
 
     for i in range(0, 2):
         if robot_loc is not None:
@@ -103,6 +103,7 @@ def convert_x_y_to_pix(im_size, x_y, size_pix):
 
 
 def is_reachable(im, pix):
+<<<<<<< Updated upstream:src/final_project/exploring.py
     """ Is the pixel reachable, i.e., has a neighbor that is free?
     Used for
     @param im - the image
@@ -122,6 +123,22 @@ def is_reachable(im, pix):
             reachable = True
 
     return reachable
+=======
+    """Check if the pixel is reachable, i.e., has a neighbor that is free.
+    
+    @param im: The image (numpy array).
+    @param pix: The pixel coordinates (i, j) as a tuple.
+    @return: True if the pixel has a free neighbor, False otherwise.
+    """
+   
+    # If any of the 8 neighbors are free, return True
+    for adj_node in path_planning.eight_connected(pix):
+        if 0 <= adj_node[0] < im.shape[1] and 0 <= adj_node[1] < im.shape[0]:
+            if path_planning.is_free(im, adj_node):
+                return True
+    
+    return False
+>>>>>>> Stashed changes:final_project/exploring.py
 
 
 def find_all_possible_goals(im):
@@ -131,35 +148,53 @@ def find_all_possible_goals(im):
     """
 
     # List of 8 neighbor offsets
-    neighbors = [(x, y) for x in [-1, 0, 1] for y in [-1, 0, 1] if (x, y) != (0, 0)]
+    neighbors = [(x, y) for x in range(-1, 1, 1) for y in range(-1, 1, 1) if (x, y) != (0, 0)]
 
+<<<<<<< Updated upstream:src/final_project/exploring.py
     # Create mask for unknown pixels
     unknown_value = 128
     unknown_mask = (im == unknown_value)
 
     # Create mask for free pixels
+=======
+    # Create the masks for free and unknown pixels
+    unknown_mask = ( im == 128)
+>>>>>>> Stashed changes:final_project/exploring.py
     free_mask = (im == 255)
 
     # Init a mask for valid neighbors
-    neighbor_mask = np.zeros_like(im, dtype=bool)
+    rolled_mask = np.zeros_like(im, dtype=bool)
 
     # Roll free pixel neighbors
     for di, dj in neighbors:
-        neighbor_mask = np.roll(np.roll(free_mask, di, axis=0), dj, axis=1)
+        rolled_mask = np.roll(np.roll(free_mask, di, axis=0), dj, axis=1)
 
     # Combine masks to find unknown pixels next to free pixels
+<<<<<<< Updated upstream:src/final_project/exploring.py
     possible_goal_mask = neighbor_mask & unknown_mask
 
+=======
+    possible_goal_mask = rolled_mask & unknown_mask
+    
+>>>>>>> Stashed changes:final_project/exploring.py
     # Find coordinates of possible goal pixels
     possible_goals = np.argwhere(possible_goal_mask)
 
     # Filter using is_reachable
-    possible_goals = [tuple(coord) for coord in possible_goals if is_reachable(im, tuple(coord))]
+    possible_goals = [(coord[1], coord[0]) for coord in possible_goals]
+
 
     return possible_goals
 
 
+<<<<<<< Updated upstream:src/final_project/exploring.py
 def find_best_point(im, possible_points, robot_loc, min_area=0.5):
+=======
+
+from scipy.ndimage import convolve
+
+def find_best_point(im, possible_points, robot_loc, min_area=0.95):
+>>>>>>> Stashed changes:final_project/exploring.py
     """
     Pick the best unseen point to go to, considering proximity and connectivity.
     
@@ -187,11 +222,11 @@ def find_best_point(im, possible_points, robot_loc, min_area=0.5):
     valid_points = []
     for point in possible_points:
         x, y = point
-        if im[y, x] == 128 and connectivity[y, x] >= min_pixels:
+        if im[y, x] == 128 and connectivity[y, x] >= min_pixels and is_reachable(im, point):
             valid_points.append(point)
 
     if not valid_points:
-        return None
+        raise ValueError("No valid points found")
 
     # Init best point stored as a tuple (distance, point)
     best_point = [np.inf, (0, 0)]
@@ -207,9 +242,22 @@ def find_best_point(im, possible_points, robot_loc, min_area=0.5):
             best_point = [dist, point]
 
     if best_point[1] == (0, 0):
+<<<<<<< Updated upstream:src/final_project/exploring.py
         return None
 
     return best_point[1]
+=======
+        raise ValueError("No best points found")
+    
+    # Find a neighbor of the best point that is free
+    for adj_node in path_planning.eight_connected(best_point[1]):
+        if path_planning.is_free(im, adj_node):
+            return adj_node
+    
+    raise ValueError("No free neighbor found")
+
+
+>>>>>>> Stashed changes:final_project/exploring.py
 
 
 def find_waypoints(im, path, res=0.95):
