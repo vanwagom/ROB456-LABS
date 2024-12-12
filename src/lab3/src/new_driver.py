@@ -23,7 +23,7 @@ class Driver:
 		self._target_point = None
 		self._threshold = threshold
 
-		self.need_to_spin = True
+		self._need_to_spin = 39
 
 		self.transform_listener = tf.TransformListener()
 
@@ -33,7 +33,8 @@ class Driver:
 		self._lidar_sub = rospy.Subscriber('base_scan', LaserScan, self._lidar_callback, queue_size=10)
 
 		# Action client
-		self._action_server = actionlib.SimpleActionServer('nav_target', NavTargetAction, execute_cb=self._action_callback, auto_start=False)
+		self._action_server = actionlib.SimpleActionServer('nav_target', NavTargetAction,
+														   execute_cb=self._action_callback, auto_start=False)
 		self._action_server.start()
 
 	@classmethod
@@ -52,8 +53,8 @@ class Driver:
 		# will run once at initialization, then runs at each waypoint to fill the space.
 		# inefficient, but it should work. Will try to make spin at final goal instead.
 		command = Driver.zero_twist()
-		command.angular.z = 360
-		self.need_to_spin = False
+		command.angular.z = 6.38
+		self._need_to_spin -= 1
 		return command
 
 	# Respond to the action request.
@@ -90,6 +91,7 @@ class Driver:
 				self._target_point = None
 				result.success.data = False
 				self._action_server.set_succeeded(result)
+				return		# trying shit
 
 			self.target_pub.publish(marker)
 			rate.sleep()
@@ -98,10 +100,10 @@ class Driver:
 		self._action_server.set_succeeded(result)
 
 	def _lidar_callback(self, lidar):
-		if self.need_to_spin:
+		if self._need_to_spin > 0:
 			# will bypass remaining code and make robot spin first before proceeding
 			command = self.spin_around_robot()
-		if self._target_point:
+		elif self._target_point:
 			self._target_point.header.stamp = rospy.Time.now()
 			try:
 				target = self.transform_listener.transformPoint('base_link', self._target_point)
@@ -125,6 +127,7 @@ class Driver:
 				rospy.logerr(f"Error in _lidar_callback: {e}")
 				return
 		else:
+			rospy.logerr("Did not spin or have target point, doing zero twist.")
 			command = Driver.zero_twist()
 
 		self._cmd_pub.publish(command)
