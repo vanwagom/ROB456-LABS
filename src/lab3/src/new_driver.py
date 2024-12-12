@@ -5,6 +5,7 @@ import rospy
 import sys
 
 from math import atan2, sqrt, tanh
+import time
 
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist, Point
@@ -24,6 +25,7 @@ class Driver:
 		self._threshold = threshold
 
 		self._need_to_spin = 39
+		self._time_at_spin = None
 
 		self.transform_listener = tf.TransformListener()
 
@@ -55,6 +57,7 @@ class Driver:
 		command = Driver.zero_twist()
 		command.angular.z = 6.38
 		self._need_to_spin -= 1
+		self._time_at_spin = time.time()
 		return command
 
 	# Respond to the action request.
@@ -100,7 +103,7 @@ class Driver:
 		self._action_server.set_succeeded(result)
 
 	def _lidar_callback(self, lidar):
-		if self._need_to_spin > 0:
+		if self._need_to_spin > 0 and (time.time() - self._time_at_spin) < 5 or self._time_at_spin is None:
 			# will bypass remaining code and make robot spin first before proceeding
 			command = self.spin_around_robot()
 		elif self._target_point:
