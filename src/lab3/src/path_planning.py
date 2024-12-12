@@ -169,11 +169,11 @@ def dijkstra(im, robot_loc, goal_loc):
     rospy.loginfo("Saved dijkstra's image")
 
     # Sanity check
-    if not is_free(im, robot_loc):
-        raise ValueError(f"Start location {robot_loc} is not in the free space of the map")
+    #if not is_free(im, robot_loc):
+    #    raise ValueError(f"Start location {robot_loc} is not in the free space of the map")
 
-    if not is_free(im, goal_loc):
-        raise ValueError(f"Goal location {goal_loc} is not in the free space of the map")
+    #if not is_free(im, goal_loc):
+    #    raise ValueError(f"Goal location {goal_loc} is not in the free space of the map")
 
     # The priority queue
     priority_queue = []
