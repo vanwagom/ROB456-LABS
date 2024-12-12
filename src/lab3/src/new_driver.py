@@ -104,7 +104,7 @@ class Driver:
 		self._action_server.set_succeeded(result)
 
 	def _lidar_callback(self, lidar):
-		if self._need_to_spin > 0 and (time.time() - self._time_at_spin) > 5:
+		if self._need_to_spin > 0 and (time.time() - self._time_at_spin) > 10:
 			# will bypass remaining code and make robot spin first before proceeding
 			command = self.spin_around_robot()
 		elif self._target_point:
