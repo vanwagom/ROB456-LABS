@@ -36,6 +36,7 @@ class StudentController(RobotController):
         super().__init__()
 
         self.goal = None
+        self.time_at_map_update = None
 
         self.force = False
         self.last_plan_at = None
@@ -69,20 +70,18 @@ class StudentController(RobotController):
 
         # If we don't have our current location, return
         if point is None or map is None:
-            rospy.loginfo('Point is none, skipping path update')
+            rospy.loginfo('Point is none, skipping map update')
             return
 
         # If we already made a path plan recently, return
-        if self.last_plan_at is not None and (time.time() - self.last_plan_at) < 5:
-            rospy.loginfo(
-                f'Got path update request, but already updated too recently {time.time() - self.last_plan_at}')
+        if self.time_at_map_update is not None and (time.time() - self.time_at_map_update) < 5:
+            rospy.loginfo("map_update called too soon, time since last update ", (time.time() - self.last_plan_at))
             return
 
-        # If we still have waypoints left to go, return (unless we force the generation)
-        if not self.force:
-            if self._waypoints is not None and len(self._waypoints) > 0:
-                rospy.loginfo(f'Got path update request, but {len(self._waypoints)} waypoints remain')
-                return
+        # If we still have waypoints left to go, return
+        if self._waypoints is not None and len(self._waypoints) > 0:
+            rospy.loginfo("map_update called, but ", len(self._waypoints), " waypoints remain")
+            return
 
         try:
             # The (x, y) position of the robot can be retrieved like this.
@@ -92,6 +91,7 @@ class StudentController(RobotController):
             if x < 0 or x >= map_data.width or y < 0 or y >= map_data.height:
                 robot_in_map = None
                 print("out of bounds!!!!!")
+                return
             else:
                 robot_in_map = (x, y)
             print("robot_in_map: ", robot_in_map)
@@ -120,6 +120,7 @@ class StudentController(RobotController):
 
             # waypoints = [((x - 2000) * map_data.resolution, (y - 2000) * map_data.resolution) for x, y in waypoints]
             self.set_waypoints(waypoints)
+            self.time_at_map_update = time.time()
 
             # rospy.loginfo(f'Robot is at {robot_position} {point.header.frame_id}')
         except Exception as e:
