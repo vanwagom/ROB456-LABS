@@ -5,7 +5,6 @@ import rospy
 import sys
 
 from math import atan2, sqrt, tanh
-import time
 
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist, Point
@@ -24,9 +23,6 @@ class Driver:
 		self._target_point = None
 		self._threshold = threshold
 
-		self._need_to_spin = 39
-		self._time_at_spin = time.time()
-
 		self.transform_listener = tf.TransformListener()
 
 		self._cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
@@ -35,8 +31,7 @@ class Driver:
 		self._lidar_sub = rospy.Subscriber('base_scan', LaserScan, self._lidar_callback, queue_size=10)
 
 		# Action client
-		self._action_server = actionlib.SimpleActionServer('nav_target', NavTargetAction,
-														   execute_cb=self._action_callback, auto_start=False)
+		self._action_server = actionlib.SimpleActionServer('nav_target', NavTargetAction, execute_cb=self._action_callback, auto_start=False)
 		self._action_server.start()
 
 	@classmethod
@@ -50,16 +45,6 @@ class Driver:
 		t.angular.z = 0.0
 
 		return t
-
-	def spin_around_robot(self):
-		# will run once at initialization, then runs at each waypoint to fill the space.
-		# inefficient, but it should work. Will try to make spin at final goal instead.
-		command = Driver.zero_twist()
-		command.angular.z = 6.38
-		self._need_to_spin -= 1
-		if self._need_to_spin == 0:
-			self._time_at_spin = time.time()
-		return command
 
 	# Respond to the action request.
 	def _action_callback(self, goal):
@@ -95,7 +80,6 @@ class Driver:
 				self._target_point = None
 				result.success.data = False
 				self._action_server.set_succeeded(result)
-				return
 
 			self.target_pub.publish(marker)
 			rate.sleep()
@@ -104,10 +88,7 @@ class Driver:
 		self._action_server.set_succeeded(result)
 
 	def _lidar_callback(self, lidar):
-		if self._need_to_spin > 0 and (time.time() - self._time_at_spin) > 10:
-			# will bypass remaining code and make robot spin first before proceeding
-			command = self.spin_around_robot()
-		elif self._target_point:
+		if self._target_point:
 			self._target_point.header.stamp = rospy.Time.now()
 			try:
 				target = self.transform_listener.transformPoint('base_link', self._target_point)
@@ -123,15 +104,12 @@ class Driver:
 				#  close_enough_to_waypoint to return True for that case
 				if self.close_enough_to_waypoint(distance, (target.point.x, target.point.y), lidar):
 					self._target_point = None
-					self._need_to_spin = 39
 					command = Driver.zero_twist()
 				else:
 					command = self.get_twist((target.point.x, target.point.y), lidar)
-			except Exception as e:
-				rospy.logerr(f"Error in _lidar_callback: {e}")
+			except:
 				return
 		else:
-			rospy.logerr("Did not spin or have target point, doing zero twist.")
 			command = Driver.zero_twist()
 
 		self._cmd_pub.publish(command)
