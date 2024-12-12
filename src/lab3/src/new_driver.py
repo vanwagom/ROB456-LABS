@@ -57,7 +57,8 @@ class Driver:
 		command = Driver.zero_twist()
 		command.angular.z = 6.38
 		self._need_to_spin -= 1
-		self._time_at_spin = time.time()
+		if self._need_to_spin == 0:
+			self._time_at_spin = time.time()
 		return command
 
 	# Respond to the action request.
