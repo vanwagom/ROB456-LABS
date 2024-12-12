@@ -168,107 +168,73 @@ def dijkstra(im, robot_loc, goal_loc):
     rospy.loginfo("Saved dijkstra's image")
 
     # Sanity check
-    #if not is_free(im, robot_loc):
-    #    print("uh oh")
-    #    raise ValueError(f"Start location {robot_loc} is not in the free space of the map")
+    if not is_free(im, robot_loc):
+        raise ValueError(f"Start location {robot_loc} is not in the free space of the map")
 
-    #if not is_free(im, goal_loc):
-    #    print("uh oh 2")
-    #    raise ValueError(f"Goal location {goal_loc} is not in the free space of the map")
+    if not is_free(im, goal_loc):
+        raise ValueError(f"Goal location {goal_loc} is not in the free space of the map")
 
-    # The priority queue itself is just a list, with elements of the form (weight, (i,j))
-    #    - i.e., a tuple with the first element the weight/score, the second element a tuple with the pixel location
+    # The priority queue
     priority_queue = []
-    # Push the start node onto the queue
-    #   push takes the queue itself, then a tuple with the first element the priority value and the second
-    #   being whatever data you want to keep - in this case, the robot location, which is a tuple
     heapq.heappush(priority_queue, (0, robot_loc))
-    print("are we here 1")
-    # The power of dictionaries - we're going to use a dictionary to store every node we've visited, along
-    #   with the node we came from and the current distance
-    # This is easier than trying to get the distance from the heap
-    visited = {}
-    # Use the (i,j) tuple to index the dictionary
-    #   Store the best distance, the parent, and if closed y/n
-    visited[robot_loc] = (0, None, False)  # For every other node this will be the current_node, distance
-    print("are we here 2")
-    # While the list is not empty - use a break for if the node is the end node
-    while priority_queue:
-        # Get the current best node off of the list
-        node_score, node_ij = heapq.heappop(priority_queue)
 
-        # Get the data back out of visited for the current best node in priority_queue
+    # Dictionary to track visited nodes: (distance, parent, closed)
+    visited = {robot_loc: (0, None, False)}
+
+    while priority_queue:
+        # Pop the current node with the lowest cost
+        node_score, node_ij = heapq.heappop(priority_queue)
         visited_distance, visited_parent, visited_closed_yn = visited[node_ij]
 
-        # TODO
-        #  Step 1: Break out of the loop if node_ij is the goal node
-        #  Step 2: If this node is closed, skip it
-        #  Step 3: Set the node to closed
-        #    Now do the instructions from the slide (the actual algorithm)
-        #  Lec 8_1: Planning, at the end
-        #  https://docs.google.com/presentation/d/1pt8AcSKS2TbKpTAVV190pRHgS_M38ldtHQHIltcYH6Y/edit#slide=id.g18d0c3a1e7d_0_0
-        # YOUR CODE HERE
-
-        # Break the loop if the current node is the location node
+        # Step 1: Break if the goal is reached
         if node_ij == goal_loc:
             break
 
-        # If the node is closed skip
+        # Step 2: Skip closed nodes
         if visited_closed_yn:
             continue
 
-        # Set the current node as visited (need to create new tuple as they are immutable)
+        # Step 3: Mark the current node as closed
         visited[node_ij] = (visited_distance, visited_parent, True)
 
-        # The travel cost between nodes, this is 1 as we are traveling 1 pixel between nodes (each pixel is a node)
-        edge_cost = 1
-
-        # Iterate over each of the neighbor nodes, determine if it is travelable (ie not out of bouds or a wall), then find it's distance from the current node and distance to the goal.
-        for adj_node in eight_connected(node_ij):
-
-            # Skip out-of-bounds nodes
-            if adj_node[0] < 0 or adj_node[1] < 0 or adj_node[0] >= im.shape[1] or adj_node[1] >= im.shape[0]:
+        # Step 4: Iterate over neighbors
+        for neighbor in eight_connected(node_ij):
+            # Skip out-of-bounds neighbors
+            if neighbor[0] < 0 or neighbor[1] < 0 or neighbor[0] >= im.shape[1] or neighbor[1] >= im.shape[0]:
                 continue
 
-            # Skip the node if it's not free 
-            if not is_free(im, adj_node):
+            # Skip walls and non-free spaces
+            if not is_free(im, neighbor):
                 continue
 
-            new_distance = visited_distance + edge_cost
+            # Calculate the distance to the neighbor
+            new_distance = visited_distance + 1
 
-            # Check if the adj node has been visited and if it's closer than the current node
-            if adj_node not in visited or new_distance < visited[adj_node][0]:
-                visited[adj_node] = (new_distance, node_ij, False)
-                heapq.heappush(priority_queue, (new_distance, adj_node))
+            # Update the neighbor's data if it's a better path
+            if neighbor not in visited or new_distance < visited[neighbor][0]:
+                visited[neighbor] = (new_distance, node_ij, False)
+                heapq.heappush(priority_queue, (new_distance, neighbor))
 
-                # TODO: Deal with not being able to get to the goal loc
-    # BEGIN SOLULTION
-
+    # Check if we reached the goal
     if goal_loc not in visited:
-
-        # Find the closest node to the goal that wasn't closed
+        # Handle unreachable goals
         closest_node = min(
             (node for node in visited if not visited[node][2]),
             key=lambda n: visited[n][0],
             default=None
         )
-
         if closest_node is None:
-            raise ValueError(" No reachable nodes from the start location")
-
+            raise ValueError("No reachable nodes from the start location")
         return dijkstra(im, robot_loc, closest_node)
 
-    # TODO: Build the path by starting at the goal node and working backwards
-    # YOUR CODE HERE
-
-    # Construct the path by backtracking from the goal location
+    # Backtrack to construct the path
     path = []
-    travel = goal_loc  # Start at the goal location
-    while travel is not None:
-        path.append(travel)
-        travel = visited[travel][1]  # Get the parent of the current node to travel backwards through the path
+    current = goal_loc
+    while current is not None:
+        path.append(current)
+        current = visited[current][1]
 
-    return path[::-1]  # Reverse the path so it's in the right order and return it
+    return path[::-1]  # Return the path from start to goal
 
 
 def open_image(im_name):
