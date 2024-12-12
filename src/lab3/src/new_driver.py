@@ -119,7 +119,7 @@ class Driver:
 				#  close_enough_to_waypoint to return True for that case
 				if self.close_enough_to_waypoint(distance, (target.point.x, target.point.y), lidar):
 					self._target_point = None
-					self.need_to_spin = True
+					self._need_to_spin = 39
 					command = Driver.zero_twist()
 				else:
 					command = self.get_twist((target.point.x, target.point.y), lidar)
